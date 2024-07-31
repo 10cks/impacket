@@ -28,6 +28,10 @@ import time
 import random
 import logging
 
+# proxy
+import socks
+import socket
+
 from impacket.examples import logger
 from impacket import version
 from impacket.dcerpc.v5 import tsch, transport
@@ -268,6 +272,12 @@ if __name__ == '__main__':
     group.add_argument('-dc-ip', action='store',metavar = "ip address",  help='IP Address of the domain controller. '
                                          'If omitted it will use the domain part (FQDN) specified in the target parameter')
     group.add_argument('-keytab', action="store", help='Read keys for SPN from keytab file')
+    # Add proxy-related arguments
+    group.add_argument('-xxxproxy', action='store', choices=['socks5'], help='Proxy type to use (e.g., socks5)')
+    group.add_argument('-xxxip', action='store', help='Proxy IP address')
+    group.add_argument('-xxxport', action='store', type=int, help='Proxy port')
+    group.add_argument('-xxxusername', action='store', help='Proxy username')
+    group.add_argument('-xxxpassword', action='store', help='Proxy password')
 
     if len(sys.argv)==1:
         parser.print_help()
@@ -313,6 +323,16 @@ if __name__ == '__main__':
 
     if options.aesKey is not None:
         options.k = True
+    # 设置代理
+    if options.xxxproxy and options.xxxip and options.xxxport:
+        logging.info(f"Setting up SOCKS5 proxy: {options.xxxip}:{options.xxxport}")
+        if options.xxxusername and options.xxxpassword:
+            logging.info(f"Using proxy authentication: {options.xxxusername}")
+            socks.set_default_proxy(socks.SOCKS5, options.xxxip, options.xxxport, username=options.xxxusername,
+                                    password=options.xxxpassword)
+        else:
+            socks.set_default_proxy(socks.SOCKS5, options.xxxip, options.xxxport)
+        socket.socket = socks.socksocket
 
     atsvc_exec = TSCH_EXEC(username, password, domain, options.hashes, options.aesKey, options.k, options.dc_ip,
                            ' '.join(options.command), options.session_id, options.silentcommand)

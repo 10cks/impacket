@@ -27,6 +27,11 @@ import argparse
 import random
 import string
 import time
+
+# proxy
+import socks
+import socket
+
 from six import PY3
 
 from impacket.examples import logger
@@ -631,6 +636,12 @@ if __name__ == '__main__':
                                                                                 ' used to trigger the payload')
     group.add_argument('-remote-binary-name', action='store', metavar="remote_binary_name", default = None, help='This will '
                                                             'be the name of the executable uploaded on the target')
+    # Add proxy-related arguments
+    group.add_argument('-xxxproxy', action='store', choices=['socks5'], help='Proxy type to use (e.g., socks5)')
+    group.add_argument('-xxxip', action='store', help='Proxy IP address')
+    group.add_argument('-xxxport', action='store', type=int, help='Proxy port')
+    group.add_argument('-xxxusername', action='store', help='Proxy username')
+    group.add_argument('-xxxpassword', action='store', help='Proxy password')
 
     if len(sys.argv)==1:
         parser.print_help()
@@ -672,6 +683,16 @@ if __name__ == '__main__':
 
     if options.aesKey is not None:
         options.k = True
+    # 设置代理
+    if options.xxxproxy and options.xxxip and options.xxxport:
+        logging.info(f"Setting up SOCKS5 proxy: {options.xxxip}:{options.xxxport}")
+        if options.xxxusername and options.xxxpassword:
+            logging.info(f"Using proxy authentication: {options.xxxusername}")
+            socks.set_default_proxy(socks.SOCKS5, options.xxxip, options.xxxport, username=options.xxxusername,
+                                    password=options.xxxpassword)
+        else:
+            socks.set_default_proxy(socks.SOCKS5, options.xxxip, options.xxxport)
+        socket.socket = socks.socksocket
 
     command = ' '.join(options.command)
     if command == ' ':

@@ -43,6 +43,11 @@ import ntpath
 import os
 import sys
 import time
+
+# proxy
+import socks
+import socket
+
 from base64 import b64encode
 
 from six import PY2, PY3
@@ -587,6 +592,12 @@ if __name__ == '__main__':
     group.add_argument('-A', action="store", metavar = "authfile", help="smbclient/mount.cifs-style authentication file. "
                                                                         "See smbclient man page's -A option.")
     group.add_argument('-keytab', action="store", help='Read keys for SPN from keytab file')
+    # Add proxy-related arguments
+    group.add_argument('-xxxproxy', action='store', choices=['socks5'], help='Proxy type to use (e.g., socks5)')
+    group.add_argument('-xxxip', action='store', help='Proxy IP address')
+    group.add_argument('-xxxport', action='store', type=int, help='Proxy port')
+    group.add_argument('-xxxusername', action='store', help='Proxy username')
+    group.add_argument('-xxxpassword', action='store', help='Proxy password')
 
     if len(sys.argv)==1:
         parser.print_help()
@@ -645,6 +656,16 @@ if __name__ == '__main__':
 
         if options.aesKey is not None:
             options.k = True
+        # 设置代理
+        if options.xxxproxy and options.xxxip and options.xxxport:
+            logging.info(f"Setting up SOCKS5 proxy: {options.xxxip}:{options.xxxport}")
+            if options.xxxusername and options.xxxpassword:
+                logging.info(f"Using proxy authentication: {options.xxxusername}")
+                socks.set_default_proxy(socks.SOCKS5, options.xxxip, options.xxxport, username=options.xxxusername,
+                                        password=options.xxxpassword)
+            else:
+                socks.set_default_proxy(socks.SOCKS5, options.xxxip, options.xxxport)
+            socket.socket = socks.socksocket
 
         executer = DCOMEXEC(' '.join(options.command), username, password, domain, options.hashes, options.aesKey,
                             options.share, options.nooutput, options.k, options.dc_ip, options.object, options.shell_type)
