@@ -40,6 +40,8 @@ import random
 import string
 import cmd
 import argparse
+
+# proxy
 import socks
 import socket
 
@@ -363,6 +365,7 @@ if __name__ == '__main__':
     group.add_argument('-aesKey', action="store", metavar = "hex key", help='AES key to use for Kerberos Authentication '
                                                                             '(128 or 256 bits)')
     group.add_argument('-keytab', action="store", help='Read keys for SPN from keytab file')
+
     # Add proxy-related arguments
     group.add_argument('-xxxproxy', action='store', choices=['socks5'], help='Proxy type to use (e.g., socks5)')
     group.add_argument('-xxxip', action='store', help='Proxy IP address')
